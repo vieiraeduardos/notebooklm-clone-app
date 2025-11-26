@@ -189,9 +189,9 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       </div>
 
       {/* Área principal do chat */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen">
         {/* Header */}
-        <div className="border-b bg-white px-6 py-4">
+        <div className="border-b bg-white px-6 py-4 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-600" />
             <h1 className="text-xl font-semibold">NotebookLM Clone</h1>
@@ -204,8 +204,10 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           </div>
         </div>
 
-        {/* Área de mensagens */}
-        <ScrollArea className="flex-1 p-6">
+        {/* Área de mensagens com scroll */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-6 space-y-4 max-w-4xl mx-auto">
           {!hasBaseText ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
@@ -298,12 +300,14 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
               )}
             </div>
           )}
+          </div>
         </ScrollArea>
+        </div>
 
-        {/* Input de mensagem */}
+        {/* Input de mensagem fixo */}
         {hasBaseText && (
-          <div className="border-t bg-white p-4">
-            <div className="flex gap-2 max-w-4xl">
+          <div className="border-t bg-white p-4 shrink-0">
+            <div className="flex gap-2 max-w-4xl mx-auto">
               <Input
                 placeholder="Faça uma pergunta sobre o documento..."
                 value={currentMessage}
