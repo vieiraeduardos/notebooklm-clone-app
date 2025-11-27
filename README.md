@@ -1,36 +1,172 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NotebookLM Clone
 
-## Getting Started
+Um clone moderno e funcional do Google NotebookLM, construído com Next.js, que permite analisar documentos e fazer perguntas utilizando inteligência artificial.
 
-First, run the development server:
+## 🎥 Demonstração
 
+### 📸 Screenshot
+![Exemplo da aplicação](docs/sample.png)
+
+### 🎥 Vídeo
+[Veja a aplicação em ação](docs/video.mp4)
+
+## ✨ Funcionalidades
+
+- 📄 **Upload de Documentos**: Suporte para arquivos `.txt`, `.md`, `.pdf`, `.doc` e `.docx`
+- 🖱️ **Drag & Drop**: Interface intuitiva para arrastar e soltar arquivos
+- 🤖 **Chat com IA**: Faça perguntas sobre o conteúdo do documento usando Google Gemini
+- 📋 **Preview de Conteúdo**: Visualize e edite o conteúdo antes de analisar
+- 🎨 **Tema Escuro/Claro**: Alternância simples entre temas
+- 📱 **Interface Responsiva**: Design moderno que funciona em qualquer dispositivo
+- 💬 **Sugestões Inteligentes**: Perguntas pré-definidas para começar rapidamente
+- 🔄 **Chat em Tempo Real**: Conversação fluida com histórico de mensagens
+- 🎯 **Notificações**: Feedback visual para todas as ações do usuário
+
+## 🚀 Como Usar
+
+### 1. Faça upload de um documento
+- Clique em "Carregar Arquivo" ou arraste um arquivo para a área indicada
+- Cole texto diretamente na caixa de texto
+- Visualize o conteúdo carregado
+
+### 2. Analise o documento
+- Clique em "Analisar Documento" para processar o conteúdo
+- Aguarde a confirmação de que o documento foi carregado
+
+### 3. Faça perguntas
+- Digite suas perguntas no campo de chat
+- Use as sugestões prontas para começar rapidamente
+- Receba respostas detalhadas baseadas no conteúdo do documento
+
+## ⚙️ Configuração e Instalação
+
+### Pré-requisitos
+- Node.js 18+ 
+- npm, yarn, pnpm ou bun
+
+### 1. Clone o repositório
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/vieiraeduardos/notebooklm-clone-app.git
+cd notebooklm-clone-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Instale as dependências
+```bash
+npm install
+# ou
+yarn install
+# ou
+pnpm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Configure as variáveis de ambiente
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Obtenha sua chave do Google Gemini
 
-## Learn More
+#### Como obter a chave da API do Google Gemini:
 
-To learn more about Next.js, take a look at the following resources:
+1. **Acesse o Google AI Studio**
+   - Vá para [https://aistudio.google.com/](https://aistudio.google.com/)
+   - Faça login com sua conta Google
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Crie uma nova chave de API**
+   - Clique em "Get API key" ou "Obter chave de API"
+   - Clique em "Create API key in new project" ou "Criar chave de API em novo projeto"
+   - Ou selecione um projeto existente
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Copie sua chave**
+   - A chave será gerada automaticamente
+   - Copie a chave e guarde em local seguro
+   - **⚠️ Importante**: Não compartilhe sua chave publicamente
 
-## Deploy on Vercel
+4. **Configure no arquivo .env**
+   ```bash
+   GOOGLE_AI_API_KEY=sua_chave_aqui
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. Execute o projeto
+```bash
+npm run dev
+# ou
+yarn dev
+# ou
+pnpm dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 6. Acesse a aplicação
+Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **UI**: Tailwind CSS, Shadcn/ui
+- **IA**: Google Gemini AI (via @google/genai)
+- **Ícones**: Lucide React
+- **Desenvolvimento**: ESLint, PostCSS
+
+## 📁 Estrutura do Projeto
+
+```
+├── app/
+│   ├── api/
+│   │   ├── ask/           # Endpoint para perguntas
+│   │   └── upload-text/   # Endpoint para upload de texto
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── ui/               # Componentes Shadcn/ui
+│   ├── chat-interface.tsx # Componente principal do chat
+│   └── theme-provider.tsx # Provedor de tema
+├── lib/
+│   ├── utils.ts          # Utilitários
+│   └── base-text-store.ts # Store global para texto base
+├── services/
+│   └── gemini-service.ts  # Serviço do Google Gemini
+└── docs/
+    └── video.mp4         # Vídeo demonstrativo
+    └── sample.png         # Screenshot demonstrativo
+```
+
+## 🔧 Scripts Disponíveis
+
+```bash
+npm run dev       # Executa em modo desenvolvimento
+npm run build     # Cria build de produção
+npm run start     # Executa build de produção
+npm run lint      # Verifica problemas de código
+```
+
+## 🆘 Problemas Comuns
+
+### Erro de API Key
+```
+Error: API key not found
+```
+**Solução**: Verifique se a variável `GOOGLE_AI_API_KEY` está configurada no arquivo `.env`
+
+### Erro de CORS
+```
+CORS policy error
+```
+**Solução**: Certifique-se de estar executando em `localhost:3000`
+
+### Erro de Upload
+```
+File upload failed
+```
+**Solução**: Verifique se o arquivo está em um formato suportado (.txt, .md, .pdf, .doc, .docx)
+
+## 🙋‍♂️ Suporte
+
+Se você encontrar problemas ou tiver dúvidas:
+1. Verifique os [problemas existentes](https://github.com/vieiraeduardos/notebooklm-clone-app/issues)
+2. Crie um novo [issue](https://github.com/vieiraeduardos/notebooklm-clone-app/issues/new)
+3. Descreva o problema com detalhes e passos para reproduzir
+
+---
+
+⭐ **Gostou do projeto?** Deixe uma estrela no repositório!
