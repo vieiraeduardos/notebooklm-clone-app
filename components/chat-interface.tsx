@@ -15,8 +15,20 @@ import {
   MessageCircle, 
   BookOpen,
   Sparkles,
-  Brain
+  Brain,
+  X,
+  Eye,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Message {
   id: string;
@@ -36,8 +48,18 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   const [currentMessage, setCurrentMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingText, setIsUploadingText] = useState(false);
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [loadedFileName, setLoadedFileName] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [notification, setNotification] = useState<{type: 'success' | 'error' | null, message: string}>({type: null, message: ''});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const hasBaseText = isTextUploaded && baseText.trim().length > 0;
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({type, message});
+    setTimeout(() => setNotification({type: null, message: ''}), 3000);
+  };
 
   const handleSubmitBaseText = async () => {
     if (baseText.trim()) {
@@ -66,6 +88,83 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       } finally {
         setIsUploadingText(false);
       }
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    await processFile(file);
+    
+    // Limpar o input para permitir carregar o mesmo arquivo novamente
+    event.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    
+    const file = files[0]; // Pegar apenas o primeiro arquivo
+    
+    // Processar o arquivo diretamente
+    await processFile(file);
+  };
+
+  const processFile = async (file: File) => {
+    // Verificar tipo de arquivo
+    const allowedTypes = [
+      'text/plain',
+      'text/markdown', 
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword'
+    ];
+
+    if (!allowedTypes.includes(file.type) && !file.name.endsWith('.txt') && !file.name.endsWith('.md')) {
+      showNotification('error', 'Formato de arquivo não suportado. Use: TXT, MD, PDF, DOC ou DOCX');
+      return;
+    }
+
+    setIsLoadingFile(true);
+    try {
+      let content = '';
+
+      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        // Arquivos de texto simples
+        content = await file.text();
+      } else {
+        // Para outros formatos, vamos simular a extração de texto
+        // Em produção, você usaria bibliotecas como pdf-parse, mammoth, etc.
+        showNotification('error', 'Funcionalidade para este tipo de arquivo em desenvolvimento. Use arquivos .txt ou .md por enquanto.');
+        return;
+      }
+
+      if (content.trim()) {
+        setBaseText(content);
+        setLoadedFileName(file.name);
+        showNotification('success', `Arquivo "${file.name}" carregado! Revise o conteúdo e clique em "Analisar Documento".`);
+      } else {
+        showNotification('error', 'O arquivo está vazio ou não foi possível extrair o conteúdo.');
+      }
+    } catch (error) {
+      console.error('Error reading file:', error);
+      showNotification('error', 'Erro ao ler o arquivo. Tente novamente.');
+    } finally {
+      setIsLoadingFile(false);
     }
   };
 
@@ -117,6 +216,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       };
       
       setMessages(prev => [...prev, errorMessage]);
+      showNotification('error', 'Erro ao processar pergunta. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +230,17 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   };
 
   return (
-    <div className={`flex h-screen bg-gray-50 ${className}`}>
+    <div className={`flex h-screen bg-gray-50 ${className} relative`}>
+      {/* Notificação */}
+      {notification.type && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          <span className="text-sm font-medium">{notification.message}</span>
+        </div>
+      )}
+      
       {/* Sidebar com texto base */}
       <div className="w-80 border-r bg-white p-6 flex flex-col">
         <div className="mb-6">
@@ -140,23 +250,105 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           </div>
           
           {!hasBaseText ? (
-            <div className="space-y-4">
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+            <div className="space-y-4"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className={`text-center py-8 border-2 border-dashed rounded-lg transition-colors ${
+                isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
+              }`}>
+                <FileText className={`w-12 h-12 mx-auto mb-4 ${isDragOver ? 'text-blue-500' : 'text-gray-300'}`} />
                 <h3 className="font-medium text-gray-900 mb-2">
-                  Adicione seu documento
+                  {isDragOver ? 'Solte o arquivo aqui' : 'Adicione seu documento'}
                 </h3>
                 <p className="text-sm text-gray-500 mb-6">
-                  Carregue ou cole o texto que deseja analisar e fazer perguntas
+                  {isDragOver ? 'Solte para carregar o arquivo' : 'Carregue ou cole o texto que deseja analisar e fazer perguntas'}
                 </p>
               </div>
               
-              <Textarea
-                placeholder="Cole seu texto aqui..."
-                value={baseText}
-                onChange={(e) => setBaseText(e.target.value)}
-                className="min-h-[200px] resize-none"
-              />
+              {loadedFileName && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-blue-700 truncate">
+                      {loadedFileName}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      {baseText.length} caracteres
+                    </p>
+                  </div>
+                  <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] w-[95vw] sm:w-full">
+                      <DialogHeader>
+                        <DialogTitle className="truncate">Visualizar Conteúdo - {loadedFileName}</DialogTitle>
+                        <DialogDescription>
+                          Revise o conteúdo do arquivo antes de analisar
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="h-[60vh] w-full">
+                        <Textarea
+                          value={baseText}
+                          onChange={(e) => setBaseText(e.target.value)}
+                          placeholder="Edite o conteúdo se necessário..."
+                          className="min-h-[50vh] resize-none border-0 focus:ring-0"
+                        />
+                      </ScrollArea>
+                      
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setLoadedFileName(null);
+                      setBaseText("");
+                    }}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              
+              {!loadedFileName && (
+                <Textarea
+                  placeholder="Cole seu texto aqui..."
+                  value={baseText}
+                  onChange={(e) => setBaseText(e.target.value)}
+                  className="h-32 resize-none"
+                />
+              )}
+              
+              {loadedFileName && (
+                <div className="p-3 border rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-600 mb-2">Preview do conteúdo:</p>
+                  <div className="bg-white p-3 rounded border max-h-24 overflow-hidden">
+                    <p className="text-sm text-gray-700" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {baseText.substring(0, 150)}...
+                    </p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsModalOpen(true)}
+                    className="mt-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    Ver conteúdo completo
+                  </Button>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Button 
@@ -172,14 +364,32 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
                   ) : (
                     <>
                       <Brain className="w-4 h-4 mr-2" />
-                      Analisar Documento
+                      Analisar
                     </>
                   )}
                 </Button>
                 
-                <Button variant="outline" className="w-full">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Carregar Arquivo
+                <Button variant="outline" className="w-full" asChild>
+                  <label>
+                    {isLoadingFile ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 animate-spin border-2 border-gray-500 border-t-transparent rounded-full"></div>
+                        Carregando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Carregar Arquivo
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept=".txt,.md,.pdf,.doc,.docx,text/plain,text/markdown"
+                      onChange={handleFileUpload}
+                      disabled={isLoadingFile}
+                      className="hidden"
+                    />
+                  </label>
                 </Button>
               </div>
             </div>
@@ -202,6 +412,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
                   setBaseText("");
                   setIsTextUploaded(false);
                   setMessages([]);
+                  setLoadedFileName(null);
                   // Limpar o texto base no servidor também
                   try {
                     await fetch('/api/upload-text', {
