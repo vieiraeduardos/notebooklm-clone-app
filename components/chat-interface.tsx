@@ -31,16 +31,41 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ className }: ChatInterfaceProps) {
   const [baseText, setBaseText] = useState("");
+  const [isTextUploaded, setIsTextUploaded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingText, setIsUploadingText] = useState(false);
 
-  const hasBaseText = baseText.trim().length > 0;
+  const hasBaseText = isTextUploaded && baseText.trim().length > 0;
 
-  const handleSubmitBaseText = () => {
+  const handleSubmitBaseText = async () => {
     if (baseText.trim()) {
-      // Aqui você pode processar o texto base
-      console.log("Texto base submetido:", baseText);
+      setIsUploadingText(true);
+      try {
+        const response = await fetch('/api/upload-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: baseText }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to upload text');
+        }
+
+        const result = await response.json();
+        setIsTextUploaded(true);
+      } catch (error) {
+        console.error('Error uploading text:', error);
+        setIsTextUploaded(false);
+        // Você pode adicionar uma notificação de erro aqui
+        alert('Erro ao enviar o texto. Tente novamente.');
+      } finally {
+        setIsUploadingText(false);
+      }
     }
   };
 
@@ -58,17 +83,43 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     setCurrentMessage("");
     setIsLoading(true);
 
-    // Simular resposta da IA (substitua pela sua implementação real)
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: currentMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const result = await response.json();
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: `Com base no texto fornecido, posso responder que: ${currentMessage}. Esta é uma resposta simulada baseada na sua pergunta sobre o conteúdo.`,
+        content: result.answer,
         isUser: false,
         timestamp: new Date(),
       };
+      
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Desculpe, ocorreu um erro ao processar sua pergunta. Tente novamente.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -111,10 +162,19 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
                 <Button 
                   onClick={handleSubmitBaseText}
                   className="w-full"
-                  disabled={!baseText.trim()}
+                  disabled={!baseText.trim() || isUploadingText}
                 >
-                  <Brain className="w-4 h-4 mr-2" />
-                  Analisar Documento
+                  {isUploadingText ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 animate-spin border-2 border-white border-t-transparent rounded-full"></div>
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4 mr-2" />
+                      Analisar Documento
+                    </>
+                  )}
                 </Button>
                 
                 <Button variant="outline" className="w-full">
@@ -138,9 +198,22 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => {
+                onClick={async () => {
                   setBaseText("");
+                  setIsTextUploaded(false);
                   setMessages([]);
+                  // Limpar o texto base no servidor também
+                  try {
+                    await fetch('/api/upload-text', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ text: "" }),
+                    });
+                  } catch (error) {
+                    console.error('Error clearing base text:', error);
+                  }
                 }}
                 className="w-full"
               >
