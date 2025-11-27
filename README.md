@@ -4,11 +4,8 @@ Um clone moderno e funcional do Google NotebookLM, construído com Next.js, que 
 
 ## 🎥 Demonstração
 
-### 📸 Screenshot
-![Exemplo da aplicação](docs/sample.png)
-
-### 🎥 Vídeo
-[Veja a aplicação em ação](docs/video.mp4)
+### 📸 Veja a aplicação em ação
+![Veja a aplicação em ação](docs/demo.gif)
 
 ## ✨ Funcionalidades
 
